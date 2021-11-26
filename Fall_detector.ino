@@ -1,4 +1,6 @@
-#include
+#include <TinyScreen.h>
+#include <Wire.h>
+
 const int MPU_addr=0x68;  // I2C address of the MPU-6050
 int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
 float ax=0, ay=0, az=0, gx=0, gy=0, gz=0;
