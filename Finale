@@ -23,6 +23,24 @@ uint8_t nextColor(){
 #include <SPI.h>
 #include <RTCZero.h>
 #include <String.h>
+#include <STBLE.h>
+
+//Debug output adds extra flash and memory requirements!
+#ifndef BLE_DEBUG
+#define BLE_DEBUG true
+#endif
+
+#if defined (ARDUINO_ARCH_AVR)
+#define SerialMonitorInterface Serial
+#elif defined(ARDUINO_ARCH_SAMD)
+#define SerialMonitorInterface SerialUSB
+#endif
+
+
+uint8_t ble_rx_buffer[21];
+uint8_t ble_rx_buffer_len = 0;
+uint8_t ble_connection_state = false;
+#define PIPE_UART_OVER_BTLE_UART_TX_TX 0
 
 TinyScreen display = TinyScreen(TinyScreenDefault);
 RTCZero rtc;
@@ -39,6 +57,9 @@ void setup(void) {
   display.begin();
   //setBrightness(brightness);//sets main current level, valid levels are 0-15
   display.setBrightness(10);
+  SerialMonitorInterface.begin(9600);
+  while (!SerialMonitorInterface); //This line will block until a serial monitor is opened with TinyScreen+!
+  BLEsetup();
   
 }
 
@@ -68,13 +89,13 @@ void loop() {
     c = false;
   }
   if (a){
-    fun();
+    timesync();
   }
   if (b){
     calendar();
   }
   if (c){
-    time();
+    sos();
   }
 }
 
@@ -179,7 +200,7 @@ void calendar(){
   delay(1000);
 }
 
-void time(){
+void Time(){
   Serial.begin(9600);
   byte arr[3];
   int arrIndex = 0;
@@ -218,4 +239,37 @@ void time(){
   display.fontColor(TS_8b_Green,TS_8b_Black);
   display.print(str);
   delay(1000);
+}
+
+int timesync() {
+  aci_loop();//Process any ACI commands or events from the NRF8001- main BLE handler, must run often. Keep main loop short.
+  ble_rx_buffer_len = 0;//clear afer reading
+  delay(1000);//should catch input
+  if (!lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, (uint8_t*)"1", (uint8_t)2))
+  {
+    SerialMonitorInterface.println(F("TX dropped!"));
+    return 1;
+  }
+}
+
+int calendar() {
+  aci_loop();//Process any ACI commands or events from the NRF8001- main BLE handler, must run often. Keep main loop short.
+  ble_rx_buffer_len = 0;//clear afer reading
+  delay(1000);//should catch input
+  if (!lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, (uint8_t*)"2", (uint8_t)2))
+  {
+    SerialMonitorInterface.println(F("TX dropped!"));
+    return 1;
+  }
+}
+
+int sos() {
+  aci_loop();//Process any ACI commands or events from the NRF8001- main BLE handler, must run often. Keep main loop short.
+  ble_rx_buffer_len = 0;//clear afer reading
+  delay(1000);//should catch input
+  if (!lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, (uint8_t*)"3", (uint8_t)2))
+  {
+    SerialMonitorInterface.println(F("TX dropped!"));
+    return 1;
+  }
 }
