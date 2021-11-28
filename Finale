@@ -90,9 +90,11 @@ void loop() {
   }
   if (a){
     timesync();
+    Time();
   }
   if (b){
     calendar();
+    calendar1();
   }
   if (c){
     sos();
@@ -180,7 +182,7 @@ void fun(){
   display.clearWindow(0,0,96,64);
 }
 
-void calendar(){
+void calendar1(){
   Serial.begin(9600);
   byte arr[3];
   int arrIndex = 0;
