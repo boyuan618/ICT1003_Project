@@ -47,21 +47,8 @@ async def run(address, loop):
             await asyncio.sleep(0.01)
             #check if we received data
             global dataFlag
-            print("HI")
-            print(dataFlag)
             if dataFlag :
                 dataFlag = False
-                print("Start")
-                #echo our received data back to the BLE device
-                #data = await client.read_gatt_char(UART_RX_UUID)
-                if data_input:
-                    print("NICE")
-                else:
-                    print("NO DATA")
-                #print("RUNLOOP: {}".format(data_input))
-                #await client.write_gatt_char(UART_TX_UUID,data)
-                print(data_input)
-                print("A")
                 if data_input == bytearray(b'1\x00'): # time sync
                     print("Timesync")
                     curtime = time.strftime('%H%M%S')
@@ -72,20 +59,17 @@ async def run(address, loop):
                     with open('events.csv') as f:
                         while True:
                             try:
-                                event = f.readline()
-                                print("help")
-                                print(event.split(",")[0])
-                                print(curtime)
+                                event = f.readline().split('\n')[0]
                                 if event.split(",")[0] > curtime:
-                                    print(event)
                                     await client.write_gatt_char(UART_TX_UUID,event.encode())
-                                    print("Sent")
+                                    print(f"Event Sent: {event}")
                                     break
                             except KeyboardInterrupt:
                                 break
                             except:
                                 pass
                 elif data_input == bytearray(b'3\x00'): # help
+                    print("SOS")
                     popen('telegram-send "Help! I fell down!"')
                 else:
                     print(f"NR: {(data_input)}")
