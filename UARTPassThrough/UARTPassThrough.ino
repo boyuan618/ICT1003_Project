@@ -77,74 +77,64 @@ void setup() {
 void loop() {
   aci_loop();//Process any ACI commands or events from the NRF8001- main BLE handler, must run often. Keep main loop short.
   display.clearScreen();
-  if (display.getButtons(TSButtonLowerLeft)){
-    timeupdate();
+  if (display.getButtons(TSButtonLowerLeft)){ //Update time
+    lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, (uint8_t*)"1", (uint8_t)2);
+    delay(1000);
     Time();
-  } else if (display.getButtons(TSButtonLowerRight)){
-    fun();
-    //requestcalendar();
-    //calendar();
-  } else if (display.getButtons(TSButtonUpperRight)){
-    sos();
+  } else if (display.getButtons(TSButtonLowerRight)){ //calendar/fun
+    lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, (uint8_t*)"2", (uint8_t)2);
+    delay(1000);
+    calendar();
+  } else if (display.getButtons(TSButtonUpperRight)){ //SOS
+    lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, (uint8_t*)"3", (uint8_t)2);
   } else if (display.getButtons(TSButtonUpperLeft)){
-    if (clearscreen){
-      clearscreen = false;
-      showTime();
-    } else {
+    if (!clearscreen) {
       clearscreen = true;
-    } //manual xor since there since to be an issue
+      display.setBrightness(0);
+    } else {
+      clearscreen = false;
+      display.setBrightness(10);
+    }
   }
   if (!clearscreen) {
     showTime(); //clears screen in fn
   }
-}
-
-void timeupdate() {
-  ble_rx_buffer_len = 0;//clear afer reading
-  delay(1000);//should catch input
-  lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, (uint8_t*)"1", (uint8_t)2);
-}
-
-void sos() {
-  ble_rx_buffer_len = 0;//clear afer reading
-  delay(1000);//should catch input
-  lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, (uint8_t*)"3", (uint8_t)2);
-}
-
-void requestcalendar() {
-  ble_rx_buffer_len = 0;//clear afer reading
-  delay(1000);//should catch input
-  lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, (uint8_t*)"2", (uint8_t)2);
+  delay(1000);
 }
 
 void Time(){
-  byte arr[3];
-  int arrIndex = 0;
-  //char *text = (char*)ble_rx_buffer;
-  char *text = (char*)"133550";
-  char hour[3];
-  char minute[3];
-  char second[3];
-  hour[3] = '\0';
-  minute[3] = '\0';
-  second[3] = '\0';
-  hour[0] = text[0];
-  minute[0] = text[2];
-  second[0] = text[4];
-  hour[1] = text[1];
-  minute[1] = text[3];
-  second[1] = text[5];
-  rtc.setTime(atoi(hour), atoi(minute), atoi(second));
+  if (ble_rx_buffer) {
+    byte arr[3];
+    int arrIndex = 0;
+    char *text = (char*)ble_rx_buffer;
+    //char *text = (char*)"133550";
+    char hour[3];
+    char minute[3];
+    char second[3];
+    hour[3] = '\0';
+    minute[3] = '\0';
+    second[3] = '\0';
+    hour[0] = text[0];
+    minute[0] = text[2];
+    second[0] = text[4];
+    hour[1] = text[1];
+    minute[1] = text[3];
+    second[1] = text[5];
+    rtc.setTime(atoi(hour), atoi(minute), atoi(second));
+    delay(1000);
+  }
 }
 
 void calendar(){
-  display.clearScreen();
-  char *text = (char*)ble_rx_buffer;
-  int width=display.getPrintWidth(text);
-  //setCursor(x,y);//set text cursor position to (x,y)
-  display.setCursor(48-(width/2),10);
-  display.print(text);
-  delay(1000);
+  if (ble_rx_buffer) {
+    display.clearScreen();
+    char *text = (char*)ble_rx_buffer;
+    int width=display.getPrintWidth(text);
+    //setCursor(x,y);//set text cursor position to (x,y)
+    display.setCursor(48-(width/2),10);
+    display.print(text);
+    delay(1000);
+  }
 }
 
 void showTime() {
@@ -172,7 +162,6 @@ void showTime() {
   //fontColor(text color, background color);//sets text and background color
   display.fontColor(TS_8b_Green,TS_8b_Black);
   display.print(str);
-  delay(1000);
 }
 
 void fun(){
