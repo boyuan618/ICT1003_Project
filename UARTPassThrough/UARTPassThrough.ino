@@ -92,8 +92,8 @@ void loop() {
   }
   if (!clearscreen) {showTime(); } //clears screen in fn 
   delay(1000);
-  
-}
+  memset(ble_rx_buffer, '\0', sizeof(ble_rx_buffer));
+  }
 
 void updatetime(){
   aci_loop();//Process any ACI commands or events from the NRF8001- main BLE handler, must run often. Keep main loop short.
@@ -122,10 +122,13 @@ void calendar(){
   aci_loop();//Process any ACI commands or events from the NRF8001- main BLE handler, must run often. Keep main loop short.
   if (ble_rx_buffer) {
     display.clearScreen();
-    char *text = (char*)ble_rx_buffer;
-    int width=display.getPrintWidth(text);
-    display.setCursor(48-(width/2),10);    //setCursor(x,y);//set text cursor position to (x,y)
-    display.print(text);
+    char *text_show = (char*)ble_rx_buffer;
+    if (text_show[0] == '\0') {
+      strcpy(text_show,"No more events");
+    }
+    int width=display.getPrintWidth(text_show);
+    display.setCursor(48-(width/2),10);    //setCursor(x,y);//set text_show cursor position to (x,y)
+    display.print(text_show);
     delay(1000);
   }
 }
