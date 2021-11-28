@@ -18,7 +18,29 @@ dataFlag = False #global flag to check for new data
 
 def notification_handler(sender, data):
     """Simple notification handler which prints the data received."""
-    print("{0}: {1}".format(sender, data))
+    curtime = time.strftime('%H%M%S')
+    print("{0}: {1}".format(curtime, data))
+    if data == bytearray(b'1\x00'): # time sync
+        print("Timesync")
+        # await client.write_gatt_char(UART_TX_UUID,curtime.encode())
+    elif data == bytearray(b'2\x00'): # calendar
+        with open('events.csv') as f:
+            f.readline()
+            while True:
+                try:
+                    event = f.readline()
+                    if event.split(",")[0] > curtime:
+                        #await client.write_gatt_char(UART_TX_UUID,event.encode())
+                        break
+                except KeyboardInterrupt:
+                    break
+                except:
+                    pass
+    elif data == bytearray(b'3\x00'): # help
+        popen('telegram-send "Help! I fell down!"')
+    else:
+        print(f"NR: {(data)}")
+
     global dataFlag
     dataFlag = True
 
@@ -36,36 +58,19 @@ async def run(address, loop):
 
 
         while True : 
-                #give some time to do other tasks
-                await asyncio.sleep(0.01)
 
-                #check if we received data
-                global dataFlag
-                if dataFlag :
-                    dataFlag = False
+            #give some time to do other tasks
+            await asyncio.sleep(0.01)
 
-                    #echo our received data back to the BLE device
-                    data = await client.read_gatt_char(UART_RX_UUID)
-                    curtime = time.strftime('%H%M%S')
-                    print(f"Received: {data}")
-                    if data[0] == b'1': # time sync
-                        print(data)
-                        # await client.write_gatt_char(UART_TX_UUID,curtime.encode())
-                    elif data[0] == b'2': # calendar
-                        with open('events.csv') as f:
-                            f.readline()
-                            while True:
-                                try:
-                                    event = f.readline()
-                                    if event.split(",")[0] > curtime:
-                                        await client.write_gatt_char(UART_TX_UUID,event.encode())
-                                        break
-                                except:
-                                    pass
-                    elif data[0]== b'3': # help
-                        popen('telegram_send "Help! I fell down!"')
-                    else:
-                        print(f"NR: {data}")
+            #check if we received data
+            global dataFlag
+            if dataFlag :
+                dataFlag = False
+
+                #echo our received data back to the BLE device
+                data = await client.read_gatt_char(UART_RX_UUID)
+                print("RUNLOOP: {1}".format(data))
+                #await client.write_gatt_char(UART_TX_UUID,data)
 
 
 if __name__ == "__main__":
@@ -79,6 +84,8 @@ if __name__ == "__main__":
             try:
                 address = (blelist[int(input("Enter choice here: "))-1].split()[0])
                 break
+            except KeyboardInterrupt:
+            	exit()
             except:
                 pass
     
@@ -86,5 +93,7 @@ if __name__ == "__main__":
         try:
             loop = asyncio.get_event_loop()
             loop.run_until_complete(run(address, loop))
+        except KeyboardInterrupt:
+            break
         except:
             pass
