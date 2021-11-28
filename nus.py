@@ -18,7 +18,6 @@ dataFlag = False #global flag to check for new data
 global data
 data_input = ""
 
-
 def notification_handler(sender, data):
     """Simple notification handler which prints the data received."""
     curtime = time.strftime('%H%M%S')
@@ -56,6 +55,7 @@ async def run(address, loop):
                 elif data_input == bytearray(b'2\x00'): # calendar
                     print("Calendar")
                     curtime = time.strftime('%H%M')
+                    event_sent = False
                     with open('events.csv') as f:
                         while True:
                             try:
@@ -63,11 +63,16 @@ async def run(address, loop):
                                 if event.split(",")[0] > curtime:
                                     await client.write_gatt_char(UART_TX_UUID,event.encode())
                                     print(f"Event Sent: {event}")
+                                    event_sent = True
                                     break
+                             
+                                    
                             except KeyboardInterrupt:
                                 break
                             except:
                                 pass
+                        
+                        
                 elif data_input == bytearray(b'3\x00'): # help
                     print("SOS")
                     popen('telegram-send "Help! I fell down!"')

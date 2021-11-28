@@ -66,7 +66,14 @@ void loop() {
   if (display.getButtons(TSButtonLowerLeft)){ //Update time
     lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, (uint8_t*)"1", (uint8_t)2);
     delay(1000);
+    
+    char *dump = (char*)ble_rx_buffer; //Due to program always not receiving first transmission
+    
+    ble_rx_buffer_len = 0;//clear afer reading
+    lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, (uint8_t*)"1", (uint8_t)2);
+    delay(1000);
     updatetime();
+    
   } else if (display.getButtons(TSButtonLowerRight)){ //calendar
     lib_aci_send_data(PIPE_UART_OVER_BTLE_UART_TX_TX, (uint8_t*)"2", (uint8_t)2);
     delay(1000);
@@ -85,9 +92,11 @@ void loop() {
   }
   if (!clearscreen) {showTime(); } //clears screen in fn 
   delay(1000);
+  
 }
 
 void updatetime(){
+  aci_loop();//Process any ACI commands or events from the NRF8001- main BLE handler, must run often. Keep main loop short.
   if (ble_rx_buffer) {
     byte arr[3];
     int arrIndex = 0;
@@ -110,6 +119,7 @@ void updatetime(){
 }
 
 void calendar(){
+  aci_loop();//Process any ACI commands or events from the NRF8001- main BLE handler, must run often. Keep main loop short.
   if (ble_rx_buffer) {
     display.clearScreen();
     char *text = (char*)ble_rx_buffer;
