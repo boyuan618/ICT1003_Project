@@ -8,8 +8,7 @@ telegram-send (assumed to be configured already)
 
 #### Setup script for windows 10 (Will need to create a telegram bot and provide API token):
 ```
-pip install ble-serial
-pip install telegram-send
+pip install ble-serial telegram-send
 telegram-send --configure
 ```
 
